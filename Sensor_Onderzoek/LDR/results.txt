@@ -1,0 +1,3 @@
+Sensor: LDR
+Voordelen: Latency ~20-30 ms
+Nadelen: Functioneert onvoorspelbaar met weinig tot geen licht.
