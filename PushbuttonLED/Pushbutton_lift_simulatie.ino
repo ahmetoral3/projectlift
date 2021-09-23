@@ -27,10 +27,10 @@ void loop()
   liftState = digitalRead(lift);
   if (liftState == HIGH)
   {
-    digitalWrite(LED, LOW);
+    digitalWrite(knopBovenLED, LOW);
   }
 
-  knopStateO = digitalRead(knopBoven);
+  knopStateO = digitalRead(knopOnder);
   if (knopStateO == HIGH)
   {
     digitalWrite(knopOnderLED, HIGH);
