@@ -45,6 +45,5 @@ void loop() {
 }
 
 void processKey(char key) {
-  Serial.print(key); // Print key for debugging
-  // Send message to Machine room, to process the key.
+  // Add a destination to the master's destinations.
 }
