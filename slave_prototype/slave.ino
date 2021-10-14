@@ -1,4 +1,4 @@
-#include <arduinio.h> // For debugging only!
+//#include <arduinio.h> // For debugging only!
 #include <Wire.h>
 
 // Define the directions the elevator can go.
@@ -26,10 +26,11 @@
 
 // Define the floor's I2C-address
 #define I2C_ADDRESS 20
+#define CONTROL_ROOM 40
 
 // Each index contains the data required to show the 
 // corresponding number on the 7-segment display.
-const uint8_t dataArray[4] = {3, 159, 37, 13};
+const byte dataArray[4] = {3, 159, 37, 13};
 const byte thisFloor = I2C_ADDRESS % 20;
 
 byte currentFloor = thisFloor; // Used to determine which number to show on the 7-segment display.
@@ -39,8 +40,6 @@ byte currentDirection = STATIONARY; // Used to determine which indicator LED to 
 bool liftDetectedBySensor = false;
 bool downButtonPressed = false;
 bool upButtonPressed = false;
-
-
 
 void setup() {
 
@@ -59,22 +58,31 @@ void setup() {
   pinMode(LED_UP, OUTPUT);
 
   Wire.begin(I2C_ADDRESS);
-
-  Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
 
   TWAR = (I2C_ADDRESS << 1) | 1; //  Enable receiving broadcasts from master.
+
+  // I2C_ADDRESS = 00000001
+  // I2C << 1 = 00000010
+  // I2C | 1 = 00000010 | 00000001 = 00000011
   
 }
 
 void loop() {
-
+  //TODO implement cooldown for IR-read.
+  // Als de lift gedetecteerd wordt, door de sensor, dan sturen we die data naar de machine-kamer.
   liftDetectedBySensor = readIRSensor();
-  downButtonPressed = isButtonUpPressed();
+  if (liftDetectedBySensor) {
+    liftDetectedBySensor = !sendDataToControlRoom((thisFloor << 1) + 1);
+  }
+  downButtonPressed = isButtonUpPressed(); 
   upButtonPressed = isButtonDownPressed();
   
 }
 
+/**
+ * Verandert de output op de 7-segment display.
+ */
 void changeNumberDisplay(const int &newFloor) {
 
   digitalWrite(LATCH_PIN, LOW);//Enable the shift register.
@@ -83,13 +91,25 @@ void changeNumberDisplay(const int &newFloor) {
 
 }
 
+/**
+ * Verandert de interne waarde van currentFloor. Als de lift op deze etage stopt EN deze etage is de destination, dan zetten we de LED-knopjes en de richting-indicator uit.
+ */
 void setCurrentFloor(const int &newFloor) {
   currentFloor = newFloor;
   changeNumberDisplay(newFloor);
+  if (newFloor == thisFloor && thisFloor == destinationFloor) {
+    setIndicatorLED(STATIONARY);
+    digitalWrite(BUTTON_DOWN_LED, LOW);
+    digitalWrite(BUTTON_UP_LED, LOW);
+  }
 }
 
+/**
+ * Berekent welke richting de liftkooi in beweegt.
+ */
 int calcDirection (const int &cFloor, const int &nFloor) {
 
+  // Als de volgende etage kleiner is dan de huidige etage, dan beweegt de liftkooi omlaag, en vice versa.
   if (nFloor < cFloor) {
     return GOING_DOWN;
   } else if (nFloor > cFloor) {
@@ -100,6 +120,9 @@ int calcDirection (const int &cFloor, const int &nFloor) {
   
 }
 
+/**
+ * Zorgt ervoor dat de juiste richting in de currentDirection-variabele komt te staan.
+ */
 void setDestinationFloor(const int &newFloor) {
   currentDirection = calcDirection(currentFloor, newFloor);
   setIndicatorLED(currentDirection);
@@ -118,6 +141,9 @@ bool isButtonDownPressed() {
   return digitalRead(BUTTON_DOWN);
 }
 
+/**
+ * Zet de juiste indicator-LEDs boven de lift-opening aan.
+ */
 void setIndicatorLED(const int &cDirection) {
   switch (cDirection) {
     case GOING_UP:
@@ -132,22 +158,21 @@ void setIndicatorLED(const int &cDirection) {
   }
 }
 
-void requestEvent() {
-
-  byte data[3] = {liftDetectedBySensor, downButtonPressed, upButtonPressed};
-
-  Wire.write(data, 3);
-  
-}
-
+/**
+ * Leest de broadcasts van de machine-kamer, en roept de juiste handle-functies aan.
+ */
 void receiveEvent(int sizeOfTransmission) {
   
   while (Wire.available()) {
       byte data = Wire.read();
+      processTransmissionData(data);
   }
   
 }
 
+/**
+ * Gebruikt de data om de interne functies aan te sturen.
+ */
 void processTransmissionData(byte &data) {
 
   bool functionIdentifier = data % 2;
@@ -158,4 +183,13 @@ void processTransmissionData(byte &data) {
     setDestinationFloor(data);
   }
   
+}
+
+/**
+ * Verstuurd data naar de machine-kamer.
+ */
+bool sendDataToControlRoom(byte data) {
+  Wire.beginTransmission(CONTROL_ROOM);
+  Wire.write(data);
+  Wire.endTransmission();
 }
