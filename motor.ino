@@ -23,7 +23,16 @@ void Backward_Rev(void){
 void Forward_ramp_up(void){
   digitalWrite(MOTOR_IN1, HIGH);
   digitalWrite(MOTOR_IN2, LOW);
-  for (int i=0; i<255; i++) { analogWrite(MOTOR_EN_1_2, i); delay(10); } } void Forward_ramp_down(void){ digitalWrite(MOTOR_IN1, HIGH); digitalWrite(MOTOR_IN2, LOW); for (int i=255; i>=0; i--) {
+  for (int i=0; i<255; i++) { 
+    analogWrite(MOTOR_EN_1_2, i); 
+    delay(10); 
+  } 
+} 
+
+void Forward_ramp_down(void){ 
+  digitalWrite(MOTOR_IN1, HIGH); 
+  digitalWrite(MOTOR_IN2, LOW); 
+  for (int i=255; i>=0; i--) {
     analogWrite(MOTOR_EN_1_2, i);
     delay(10);
   }
@@ -32,7 +41,16 @@ void Forward_ramp_up(void){
 void Backward_ramp_up(void){
   digitalWrite(MOTOR_IN1, LOW);
   digitalWrite(MOTOR_IN2, HIGH);
-  for (int i=0; i<255; i++) { analogWrite(MOTOR_EN_1_2, i); delay(10); } } void Backward_ramp_down(void){ digitalWrite(MOTOR_IN1, LOW); digitalWrite(MOTOR_IN2, HIGH); for (int i=255; i>=0; i--) {
+  for (int i=0; i<255; i++) { 
+    analogWrite(MOTOR_EN_1_2, i); 
+    delay(10); 
+  } 
+} 
+
+void Backward_ramp_down(void){ 
+  digitalWrite(MOTOR_IN1, LOW); 
+  digitalWrite(MOTOR_IN2, HIGH); 
+  for (int i=255; i>=0; i--) {
     analogWrite(MOTOR_EN_1_2, i);
     delay(10);
   }
