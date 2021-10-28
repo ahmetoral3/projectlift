@@ -1,11 +1,20 @@
 #include <arduinio.h>
 #include <Wire.h>
 #include <Keypad.h>
+#include "DestinationManager.h"
 
-// Define the directions the elevator can go.
-#define GOING_DOWN -1
-#define STATIONARY 0
-#define GOING_UP 1
+#define MOTOR_EN_1_2  12
+#define MOTOR_IN1     11
+#define MOTOR_IN2     10
+ 
+#define slow 64
+#define normal 128
+#define fast 255
+
+#define delayFac  200
+ 
+int Speed;
+int startTime; 
 
 // The I2C-address of the control-room, which is known by the floor-controllers.
 #define I2C_ADDRESS 40
@@ -56,6 +65,10 @@ byte currentDirection = STATIONARY;
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 void setup() {
+  pinMode(MOTOR_EN_1_2, OUTPUT);
+  pinMode(MOTOR_IN1, OUTPUT);
+  pinMode(MOTOR_IN2, OUTPUT);
+  
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(receiveEvent);
 }
@@ -74,7 +87,7 @@ void receiveEvent(int numOfBytes) {
   // TODO handle data...
   while (Wire.available()) {
     byte data = Wire.read();
-    bool functionIdentifier = data % 2; // Check of LSB 1 of 0 is.
+    bool functionIdentifier = data & 1; // Check of LSB 1 of 0 is.
     if (functionIdentifier) { // Als LSB 1 is, dan is de data IR-data.
       handleIRSignal(data >> 1); // Shift naar rechts om de functionIdentifier te verwijderen, en roep de handle-functie aan.
     } else { // Als LSB 0 is, dan is de data een button-press. 
@@ -134,6 +147,12 @@ void removeAtIndex(int index) {
 
 void handleIRSignal(byte data) {
   // TODO implement
+  // if data == destinationFloor then
+  //     Stop elevator
+  //     Remove destination from array (removeAtIndex(0))
+  // endif
+  //
+  // Send floor number to 7-segs
 }
 
 void handleButtonPress(byte data) {
@@ -198,4 +217,62 @@ void processKey(char key) {
   
   handleButtonPress(data);
   
+}
+
+// Motor
+void forwardRampUp(){
+  digitalWrite(MOTOR_IN1, HIGH);
+  digitalWrite(MOTOR_IN2, LOW);
+  int i = 134;
+  startTime = millis();
+  while (i < 255) {
+    analogWrite(MOTOR_EN_1_2, i);
+    if ((millis() - startTime)%delayFac==0){
+      i += 1;
+    }
+  }
+} 
+
+void forwardRampDown(){ 
+  digitalWrite(MOTOR_IN1, HIGH); 
+  digitalWrite(MOTOR_IN2, LOW);
+  int i = 255;
+  startTime = millis();
+  while (i >= 0) {
+    analogWrite(MOTOR_EN_1_2, i);
+    if ((millis() - startTime)%delayFac==0){
+      i -= 1;;
+    }
+  }
+}
+ 
+void backwardRampUp(){
+  digitalWrite(MOTOR_IN1, LOW);
+  digitalWrite(MOTOR_IN2, HIGH);
+  int i = 134;
+  startTime = millis();
+  while (i < 255) {
+    analogWrite(MOTOR_EN_1_2, i);
+    if ((millis() - startTime)%delayFac==0){
+      i += 1;
+    }
+  }
+} 
+
+void backwardRampDown(){ 
+  digitalWrite(MOTOR_IN1, LOW); 
+  digitalWrite(MOTOR_IN2, HIGH); 
+  int i = 255;
+  startTime = millis();
+  while (i >= 0) {
+    analogWrite(MOTOR_EN_1_2, i);
+    if ((millis() - startTime)%delayFac==0){
+      i -= 1;;
+    }
+  }
+}
+ 
+void brake(){
+  digitalWrite(MOTOR_IN1, HIGH);
+  digitalWrite(MOTOR_IN2, HIGH);
 }
