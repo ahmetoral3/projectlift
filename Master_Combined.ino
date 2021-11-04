@@ -1,7 +1,7 @@
 #include <arduinio.h>
 #include <Wire.h>
 #include <Keypad.h>
-#include "DestinationManager.h"
+//#include "DestinationManager.h"
 
 #define MOTOR_EN_1_2  12
 #define MOTOR_IN1     11
@@ -12,12 +12,12 @@
 #define fast 255
 
 #define delayFac  200
- 
-int Speed;
-int startTime; 
 
 // The I2C-address of the control-room, which is known by the floor-controllers.
 #define I2C_ADDRESS 40
+
+#define STATIONARY 0
+//#define 
 
 // Keypad setup
 const byte ROWS = 4; // Four rows
@@ -38,6 +38,10 @@ char keys[ROWS][COLS] = {
 {'7','8','9','C'},
 {'*','0','#','D'}
 };
+
+// 
+int Speed;
+int startTime; 
 
 /*
  * Destinations kunnen ook opgeslagen worden door gebruik te maken van bit-shifting.
