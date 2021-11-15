@@ -175,7 +175,7 @@ void receiveEvent(int sizeOfTransmission) {
  */
 void processTransmissionData(byte &data) {
 
-  bool functionIdentifier = data % 2;
+  bool functionIdentifier = data & 1;
   data  = data >> 1;
   if (functionIdentifier) {
     setCurrentFloor(data);
