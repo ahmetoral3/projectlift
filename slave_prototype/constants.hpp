@@ -28,5 +28,5 @@
 
 // Each index contains the data required to show the 
 // corresponding number on the 7-segment display.
-const byte dataArray[4] = {3, 159, 37, 13};
+const byte dataArray[4] = {B11111101, B01100001, B11011011, B11110011};
 const byte thisFloor = I2C_ADDRESS % 20;
