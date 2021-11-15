@@ -31,6 +31,12 @@ void setup() {
 
   TWAR = (I2C_ADDRESS << 1) | 1; //  Enable receiving broadcasts from master.
 
+  cli();
+  attachInterrupt(digitalPinToInterrupt(BUTTON_UP), buttonUpInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_DOWN), buttonUpInterrupt, FALLING);
+  sei();
+  
+
   // I2C_ADDRESS = 00000001
   // I2C << 1 = 00000010
   // I2C | 1 = 00000010 | 00000001 = 00000011
@@ -163,4 +169,21 @@ bool sendDataToControlRoom(byte data) {
   Wire.beginTransmission(CONTROL_ROOM);
   Wire.write(data);
   Wire.endTransmission();
+}
+
+void buttonUpInterrupt() {
+  if (currentFloor != thisFloor) {
+    digitalWrite(BUTTON_UP_LED, HIGH);
+    byte data = thisFloor << 1;
+    data += 1;
+    data = data << 1;
+    sendDataToControlRoom(data);
+  }
+}
+
+void buttonDownInterrupt() {
+  if (currentFloor !=  thisFloor) {
+    digitalWrite(BUTTON_DOWN_LED, HIGH);
+    sendDataToControlRoom(thisFloor << 2);
+  }
 }
