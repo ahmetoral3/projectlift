@@ -17,6 +17,8 @@
 #define I2C_ADDRESS 40
 
 #define STATIONARY 0
+#define GOING_UP 1
+#define GOING_DOWN -1
 //#define 
 
 // Keypad setup
@@ -42,6 +44,7 @@ char keys[ROWS][COLS] = {
 // 
 int Speed;
 int startTime; 
+long timeToGo;
 
 /*
  * Destinations kunnen ook opgeslagen worden door gebruik te maken van bit-shifting.
@@ -75,13 +78,35 @@ void setup() {
   
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(receiveEvent);
+  
+  cli();
+  setupTimerInterrupt(10);
+  sei();
+
+  timeToGo = millis();
 }
 
 void loop() {
   // Hier moet de motor-code. De rest van de logica wordt uitgevoerd naar aanleiding van
   // signalen vanaf de etages.
   // Ook de keypad hier uitlezen.
+  if (currentDirection == STATIONARY && (timeToGo - millis()) < 0 && destinationsLeft > 0) {
+    destinationFloor = destinations[0];
+    if (destinationFloor > currentFloor) {
+      currentDirection = GOING_UP;
+      forwardRampUp();
+    } else {
+      currentDirection = GOING_DOWN;
+      backwardRampUp();
+    }
+  }
+  
+}
 
+void sendI2CData(int data) {
+  Wire.beginTransmission(0);
+  Wire.write(data);
+  Wire.endTransmission();
 }
 
 /**
@@ -157,6 +182,24 @@ void handleIRSignal(byte data) {
   // endif
   //
   // Send floor number to 7-segs
+  if (data == destinationFloor) {
+    switch(currentDirection) {
+      case 0:
+        break;
+      case 1:
+        forwardRampDown();
+        break;
+      case -1:
+        backwardRampDown();
+        break;
+    }
+    timeToGo = millis() + 5000;
+    removeAtIndex(0);
+    currentDirection = STATIONARY;
+  }
+
+  
+  
 }
 
 void handleButtonPress(byte data) {
@@ -170,26 +213,26 @@ void handleButtonPress(byte data) {
   insertInDestinationArray(destinationsLeft, data);
 }
 
-void readKeypad() {
-  char key = keypad.getKey();
-  if (key != NO_KEY) { // Dit voeren we alleen uit als er WEL een knop ingedrukt is.
-    /*
-     * Wanneer een case waar is, dan zal de switch alles daaronder uitvoeren, tot het een break-statement tegenkomt. Dit betekent dat we voor de waardes 
-     * 0 t/m 3 maar 1 keer processKey hoeven neer te zetten, gevolgd door een break. Alle waardes daarboven zijn niet relevant voor onze lift, dus 
-     * die negeren we.
-     */
-    switch (key) {
-      case '0':
-      case '1':
-      case '2':
-      case '3':
-        processKey(key);
-        break;
-      default:
-        break;
-    }
-  }
-}
+//void readKeypad() {
+//  char key = keypad.getKey();
+//  if (key != NO_KEY) { // Dit voeren we alleen uit als er WEL een knop ingedrukt is.
+//    /*
+//     * Wanneer een case waar is, dan zal de switch alles daaronder uitvoeren, tot het een break-statement tegenkomt. Dit betekent dat we voor de waardes 
+//     * 0 t/m 3 maar 1 keer processKey hoeven neer te zetten, gevolgd door een break. Alle waardes daarboven zijn niet relevant voor onze lift, dus 
+//     * die negeren we.
+//     */
+//    switch (key) {
+//      case '0':
+//      case '1':
+//      case '2':
+//      case '3':
+//        processKey(key);
+//        break;
+//      default:
+//        break;
+//    }
+//  }
+//}
 
 void processKey(char key) {
   
@@ -279,4 +322,24 @@ void backwardRampDown(){
 void brake(){
   digitalWrite(MOTOR_IN1, HIGH);
   digitalWrite(MOTOR_IN2, HIGH);
+}
+
+void setupTimerInterrupt(int freq) {
+
+  TCCR3A = 0;
+  TCCR3B = 0;
+  TCNT3 = 0;
+
+  TCCR3B |= (1 << WGM12);
+
+  TCCR3B |= (1 << CS12) | (1 << CS10);
+
+  OCR3A = 15625 / freq - 1;
+
+  TIMSK3 |= (1 << OCIE3A);
+  
+}
+
+ISR(TIMER3_COMPA_vect) {
+  processKey(keypad.getKey());
 }
