@@ -1,4 +1,4 @@
-//#include <arduinio.h> // For debugging only!
+#include <arduinio.h> // For debugging only!
 #include <Wire.h>
 #include "constants.hpp" 
 
@@ -12,15 +12,17 @@ bool upButtonPressed = false;
 
 void setup() {
 
+  Serial.begin(9600);
+
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
   pinMode(DATA_PIN, OUTPUT);
   
   pinMode(SENSOR_DATA, INPUT);
   
-  pinMode(BUTTON_UP, INPUT_PULLUP);
+  pinMode(BUTTON_UP, INPUT);
   pinMode(BUTTON_UP_LED, OUTPUT);
-  pinMode(BUTTON_DOWN, INPUT_PULLUP);
+  pinMode(BUTTON_DOWN, INPUT);
   pinMode(BUTTON_DOWN_LED, OUTPUT);
   
   pinMode(LED_DOWN, OUTPUT);
@@ -31,11 +33,17 @@ void setup() {
 
   TWAR = (I2C_ADDRESS << 1) | 1; //  Enable receiving broadcasts from master.
 
-  cli();
+//  cli();
   attachInterrupt(digitalPinToInterrupt(BUTTON_UP), buttonUpInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_DOWN), buttonUpInterrupt, FALLING);
-  sei();
-  
+  attachInterrupt(digitalPinToInterrupt(BUTTON_DOWN), buttonDownInterrupt, FALLING);
+//  sei();
+
+  changeNumberDisplay(thisFloor);
+
+  digitalWrite(LED_UP, HIGH);
+  digitalWrite(LED_DOWN ,HIGH);
+  digitalWrite(BUTTON_UP_LED, HIGH);
+  digitalWrite(BUTTON_DOWN_LED, HIGH);
 
   // I2C_ADDRESS = 00000001
   // I2C << 1 = 00000010
@@ -61,9 +69,9 @@ void loop() {
  * Verandert de output op de 7-segment display.
  */
 void changeNumberDisplay(const int &newFloor) {
-
+  cout << "Setting display to: " << newFloor << endl;
   digitalWrite(LATCH_PIN, LOW);//Enable the shift register.
-  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, dataArray[newFloor]);//to show that elevator is on builder's floor.
+  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, dataArray[newFloor]);//to show that elevator is on builder's floor.
   digitalWrite(LATCH_PIN, HIGH);//Upload the data from shift register to storage register. 
 
 }
@@ -172,6 +180,7 @@ bool sendDataToControlRoom(byte data) {
 }
 
 void buttonUpInterrupt() {
+  cout << "Button up pressed." << endl;
   if (currentFloor != thisFloor) {
     digitalWrite(BUTTON_UP_LED, HIGH);
     byte data = thisFloor << 1;
@@ -182,6 +191,7 @@ void buttonUpInterrupt() {
 }
 
 void buttonDownInterrupt() {
+  cout << "Button down pressed." << endl;
   if (currentFloor !=  thisFloor) {
     digitalWrite(BUTTON_DOWN_LED, HIGH);
     sendDataToControlRoom(thisFloor << 2);
