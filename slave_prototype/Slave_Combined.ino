@@ -1,9 +1,9 @@
-#include <arduinio.h> // For debugging only!
+//#include <arduinio.h> // For debugging only!
 #include <Wire.h>
 #include "constants.hpp" 
 
-byte currentFloor = thisFloor; // Used to determine which number to show on the 7-segment display.
-byte destinationFloor = thisFloor;
+byte currentFloor = 6; // Used to determine which number to show on the 7-segment display.
+byte destinationFloor = 6;
 byte currentDirection = STATIONARY; // Used to determine which indicator LED to turn on.
 
 bool liftDetectedBySensor = false;
@@ -12,7 +12,7 @@ bool upButtonPressed = false;
 
 void setup() {
 
-  Serial.begin(9600);
+//  Serial.begin(9600);
 
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
@@ -38,12 +38,12 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(BUTTON_DOWN), buttonDownInterrupt, FALLING);
 //  sei();
 
-  changeNumberDisplay(thisFloor);
+//  changeNumberDisplay(thisFloor);
 
-  digitalWrite(LED_UP, HIGH);
-  digitalWrite(LED_DOWN ,HIGH);
-  digitalWrite(BUTTON_UP_LED, HIGH);
-  digitalWrite(BUTTON_DOWN_LED, HIGH);
+//  digitalWrite(LED_UP, HIGH);
+//  digitalWrite(LED_DOWN ,HIGH);
+//  digitalWrite(BUTTON_UP_LED, HIGH);
+//  digitalWrite(BUTTON_DOWN_LED, HIGH);
 
   // I2C_ADDRESS = 00000001
   // I2C << 1 = 00000010
@@ -54,22 +54,37 @@ void setup() {
 void loop() {
   //TODO implement cooldown for IR-read.
   // Als de lift gedetecteerd wordt, door de sensor, dan sturen we die data naar de machine-kamer.
-  if (currentFloor != thisFloor) {
-    liftDetectedBySensor = readIRSensor();
+  if (!readIRSensor() && currentFloor  != thisFloor) {
+//    cout << "Lift detected..." << endl;
+    currentFloor = thisFloor;
+    sendDataToControlRoom((thisFloor << 1) + 1);
   }
-  if (liftDetectedBySensor ) {
-    liftDetectedBySensor = !sendDataToControlRoom((thisFloor << 1) + 1);
+
+  if (downButtonPressed) {
+    digitalWrite(BUTTON_DOWN_LED, HIGH);
+    sendDataToControlRoom(thisFloor << 2);
+    downButtonPressed = false;
   }
-  downButtonPressed = isButtonUpPressed(); 
-  upButtonPressed = isButtonDownPressed();
   
+  if (upButtonPressed) {
+    digitalWrite(BUTTON_UP_LED, HIGH);
+    byte data = thisFloor << 1;
+    data += 1;
+    data = data << 1;
+    sendDataToControlRoom(data);
+    upButtonPressed = false;
+  }
+
+//  downButtonPressed = isButtonUpPressed(); 
+//  upButtonPressed = isButtonDownPressed();
+//  sendDataToControlRoom(7);
 }
 
 /**
  * Verandert de output op de 7-segment display.
  */
 void changeNumberDisplay(const int &newFloor) {
-  cout << "Setting display to: " << newFloor << endl;
+//  cout << "Setting display to: " << newFloor << endl;
   digitalWrite(LATCH_PIN, LOW);//Enable the shift register.
   shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, dataArray[newFloor]);//to show that elevator is on builder's floor.
   digitalWrite(LATCH_PIN, HIGH);//Upload the data from shift register to storage register. 
@@ -174,26 +189,27 @@ void processTransmissionData(byte &data) {
  * Verstuurd data naar de machine-kamer.
  */
 bool sendDataToControlRoom(byte data) {
+//  cout << "Sending data: " << data << endl;
   Wire.beginTransmission(CONTROL_ROOM);
   Wire.write(data);
-  Wire.endTransmission();
+//  cout << "Called write()" << endl;
+  Wire.endTransmission(); 
+//    cout << "Sent data to: " << CONTROL_ROOM << endl;
+  
+//  cout << "Finished sending..." << endl;
+  
 }
 
 void buttonUpInterrupt() {
-  cout << "Button up pressed." << endl;
-  if (currentFloor != thisFloor) {
-    digitalWrite(BUTTON_UP_LED, HIGH);
-    byte data = thisFloor << 1;
-    data += 1;
-    data = data << 1;
-    sendDataToControlRoom(data);
-  }
+//  cout << "Button up pressed." << endl;
+//  if (currentFloor != thisFloor) {
+    upButtonPressed = true;
+//  }
 }
 
 void buttonDownInterrupt() {
-  cout << "Button down pressed." << endl;
-  if (currentFloor !=  thisFloor) {
-    digitalWrite(BUTTON_DOWN_LED, HIGH);
-    sendDataToControlRoom(thisFloor << 2);
-  }
+//  cout << "Button down pressed." << endl;
+//  if (currentFloor !=  thisFloor) {
+    downButtonPressed = true;
+//  }
 }
