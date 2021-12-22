@@ -26,11 +26,9 @@ void loop()
 }
 
 void receive(int numberOfBytes) {
- while (Wire.available()) {
-  if (Wire.read()) {
+  if (Wire.read() == 1) {
     digitalWrite(LED_BUILTIN, HIGH);
   } else {
     digitalWrite(LED_BUILTIN, LOW);
   }
- }
 }
