@@ -4,9 +4,10 @@ int x = 0;
 
 void setup() 
 {
-  Wire.begin(); 
+  Wire.begin(15); 
   Serial.begin(9600);
   pinMode(LED,OUTPUT);
+  Wire.onReceive(receive);
 }
 
 void loop() 
@@ -21,4 +22,14 @@ void loop()
     x = 0;
   }
   delay(200);
+}
+
+void receive(int numberOfBytes) {
+ while (Wire.available()) {
+  if (Wire.read()) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+ }
 }
