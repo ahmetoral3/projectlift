@@ -1,15 +1,9 @@
-#include <arduinio.h>
 #include <Wire.h>
 #include <Keypad.h>
-//#include "DestinationManager.h"
 
 #define MOTOR_EN_1_2  12
 #define MOTOR_IN1     11
 #define MOTOR_IN2     10
- 
-#define slow 64
-#define normal 128
-#define fast 255
 
 #define delayFac  200
 
@@ -42,9 +36,9 @@ char keys[ROWS][COLS] = {
 };
 
 // 
-int Speed;
-int startTime; 
-long timeToGo;
+uint8_t Speed;
+long startTime; 
+uint32_t timeToGo;
 
 /*
  * Destinations kunnen ook opgeslagen worden door gebruik te maken van bit-shifting.
@@ -61,17 +55,19 @@ long timeToGo;
  * naar boven.
  * 
  */
-byte destinations[6];
-byte destinationsLeft = 0;
+uint8_t destinations[6];
+uint8_t destinationsLeft = 0;
 
-byte currentFloor = 0;
-byte destinationFloor = 0;
-byte currentDirection = STATIONARY;
+uint8_t currentFloor = 0;
+uint8_t destinationFloor = 0;
+int8_t currentDirection = STATIONARY;
 
 // Initieer de keypad.
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 void setup() {
+  Serial.begin(9600);
+  
   pinMode(MOTOR_EN_1_2, OUTPUT);
   pinMode(MOTOR_IN1, OUTPUT);
   pinMode(MOTOR_IN2, OUTPUT);
@@ -79,28 +75,36 @@ void setup() {
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(receiveEvent);
   
-  cli();
-  setupTimerInterrupt(10);
-  sei();
+//  setupTimerInterrupt(15);
 
-  timeToGo = millis();
+  timeToGo = millis() + 5000; // 
+
+  insertInDestinationArray(0, 0); // Set current-floor to 0
 }
 
 void loop() {
   // Hier moet de motor-code. De rest van de logica wordt uitgevoerd naar aanleiding van
   // signalen vanaf de etages.
   // Ook de keypad hier uitlezen.
-  if (currentDirection == STATIONARY && (timeToGo - millis()) < 0 && destinationsLeft > 0) {
+  if (currentDirection == STATIONARY && (millis() > timeToGo) && destinationsLeft > 0) {
     destinationFloor = destinations[0];
     if (destinationFloor > currentFloor) {
-      currentDirection = GOING_UP;
+      setCurrentDirection(GOING_UP);
       forwardRampUp();
     } else {
-      currentDirection = GOING_DOWN;
+      setCurrentDirection(GOING_DOWN);
       backwardRampUp();
     }
   }
   
+}
+
+void setCurrentDirection(byte cDirection) {
+  currentDirection = cDirection;
+  byte data = 0;
+  data += destinationFloor;
+  data = data << 1;
+  sendI2CData(data);
 }
 
 void sendI2CData(int data) {
@@ -114,8 +118,12 @@ void sendI2CData(int data) {
  */
 void receiveEvent(int numOfBytes) {
   // TODO handle data...
+//  cout << "Data received..." << endl;
+Serial.println("Data received...");
   while (Wire.available()) {
     byte data = Wire.read();
+//    cout << data << endl;
+    Serial.println(data);
     bool functionIdentifier = data & 1; // Check of LSB 1 of 0 is.
     if (functionIdentifier) { // Als LSB 1 is, dan is de data IR-data.
       handleIRSignal(data >> 1); // Shift naar rechts om de functionIdentifier te verwijderen, en roep de handle-functie aan.
@@ -131,7 +139,7 @@ void receiveEvent(int numOfBytes) {
 void insertInDestinationArray(int index, byte destination) {
   // Als de index groter is dan destinationsLeft, dan valt de index buiten de functionele array.
   if (index > destinationsLeft) { 
-    cout << "Index is greater than amount of destinations in array." << endl;
+//    cout << "Index is greater than amount of destinations in array." << endl;
     return;
   }
 
@@ -196,6 +204,7 @@ void handleIRSignal(byte data) {
     timeToGo = millis() + 5000;
     removeAtIndex(0);
     currentDirection = STATIONARY;
+    sendI2CData((data << 1) + 1);
   }
 
   
@@ -213,56 +222,35 @@ void handleButtonPress(byte data) {
   insertInDestinationArray(destinationsLeft, data);
 }
 
-//void readKeypad() {
-//  char key = keypad.getKey();
-//  if (key != NO_KEY) { // Dit voeren we alleen uit als er WEL een knop ingedrukt is.
-//    /*
-//     * Wanneer een case waar is, dan zal de switch alles daaronder uitvoeren, tot het een break-statement tegenkomt. Dit betekent dat we voor de waardes 
-//     * 0 t/m 3 maar 1 keer processKey hoeven neer te zetten, gevolgd door een break. Alle waardes daarboven zijn niet relevant voor onze lift, dus 
-//     * die negeren we.
-//     */
-//    switch (key) {
-//      case '0':
-//      case '1':
-//      case '2':
-//      case '3':
-//        processKey(key);
-//        break;
-//      default:
-//        break;
-//    }
-//  }
-//}
-
 void processKey(char key) {
   
-  byte data;
+  byte keypad_data = currentFloor;
   
   switch (key) {
     case '0':
-      data = 0;
+      keypad_data = 0;
       break;
     case '1':
-      data = 1;
+      keypad_data = 1;
       break;
     case '2':
-      data = 2;
+      keypad_data = 2;
       break;
     case '3':
-      data = 3;
+      keypad_data = 3;
       break;
     default:
       break;
   }
 
-  if (data == currentFloor) {
+  if (keypad_data == currentFloor) {
     return;
   }
 
-  data = data << 1;
-  data += (data > currentFloor) ? 1 : 0;
+  keypad_data = keypad_data << 1;
+  keypad_data += (keypad_data > currentFloor) ? 1 : 0;
   
-  handleButtonPress(data);
+  handleButtonPress(keypad_data);
   
 }
 
