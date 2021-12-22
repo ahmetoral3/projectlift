@@ -32,10 +32,10 @@ void setup() {
 
   TWAR = (I2C_ADDRESS << 1) | 1; //  Enable receiving broadcasts from master.
 
-//   cli();
-//   attachInterrupt(digitalPinToInterrupt(BUTTON_UP), buttonUpInterrupt, FALLING);
-//   attachInterrupt(digitalPinToInterrupt(BUTTON_DOWN), buttonDownInterrupt, FALLING);
-//   sei();
+  cli();
+  attachInterrupt(digitalPinToInterrupt(BUTTON_UP), buttonUpInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_DOWN), buttonDownInterrupt, FALLING);
+  sei();
 
 //  changeNumberDisplay(thisFloor);
 
@@ -193,14 +193,14 @@ bool sendDataToControlRoom(byte data) {
   Wire.endTransmission();  
 }
 
-// void buttonUpInterrupt() {
-//   if (currentFloor  != thisFloor) {
-//     upButtonPressed = true;
-//   }
-// }
+void buttonUpInterrupt() {
+  if (currentFloor  != thisFloor) {
+    upButtonPressed = true;
+  }
+}
 
-// void buttonDownInterrupt() {
-//   if (currentFloor  != thisFloor) {
-//     downButtonPressed = true;
-//   }
-// }
+void buttonDownInterrupt() {
+  if (currentFloor  != thisFloor) {
+    downButtonPressed = true;
+  }
+}
