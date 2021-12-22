@@ -20,9 +20,15 @@ void loop()
   if (x <= 3) 
   {
     digitalWrite(LED, HIGH);
+    Wire.beginTransmission(15);
+    Wire.write(1);              
+    Wire.endTransmission();
   }
   else 
   {
     digitalWrite(LED, LOW);
+    Wire.beginTransmission(15);
+    Wire.write(0);              
+    Wire.endTransmission();
   }
 }
