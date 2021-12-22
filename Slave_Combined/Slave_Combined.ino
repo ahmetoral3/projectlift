@@ -48,7 +48,7 @@ void setup() {
   // I2C << 1 = 00000010
   // I2C | 1 = 00000010 | 00000001 = 00000011
 
-  changeNumberDisplay(3);
+  changeNumberDisplay(thisFloor);
   
 }
 
