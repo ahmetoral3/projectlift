@@ -15,6 +15,7 @@ void loop()
   Wire.beginTransmission(9);
   Wire.write(x);              
   Wire.endTransmission();
+  Serial.println(x);
  
   x++;
   if (x > 6) 
