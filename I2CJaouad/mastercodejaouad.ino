@@ -50,7 +50,7 @@ void requestData (int etage) {
     statusSensor[q] = Wire.read();
   }
   //De knopjes van de etage wordt gecheckt om te kijken of de lift naar boven of naar beneden moet
-  if (statusButtonRed[etage] == 1 && huidigeVerdieping > etage) {
+  if (statusButtonRed[etage] == 0 && huidigeVerdieping > etage) {
     Wire.beginTransmission(etage);
     Wire.write(huidigeVerdieping); //
     Wire.write(1); //Rood lampje van de knop wordt aangezet
@@ -62,7 +62,7 @@ void requestData (int etage) {
     Wire.write(0); //Rood lampje van de knop wordt uitgezet
     Wire.write(0); //Wit lampje van de knop wordt uitgezet
     Wire.endTransmission();
-  } else if (statusButtonWhite[etage] == 1 && huidigeVerdieping > etage) {
+  } else if (statusButtonWhite[etage] == 0 && huidigeVerdieping > etage) {
     Wire.beginTransmission(etage);
     Wire.write(huidigeVerdieping);
     Wire.write(0);
@@ -75,7 +75,7 @@ void requestData (int etage) {
     Wire.write(0);
     Wire.endTransmission();
   }
-  if (statusButtonRed[etage] == 1 && huidigeVerdieping < etage) {
+  if (statusButtonRed[etage] == 0 && huidigeVerdieping < etage) {
     Wire.beginTransmission(etage);
     Wire.write(huidigeVerdieping);
     Wire.write(1);
@@ -87,7 +87,7 @@ void requestData (int etage) {
     Wire.write(0);
     Wire.write(0);
     Wire.endTransmission();
-  } else if (statusButtonWhite[etage] == 1 && huidigeVerdieping < etage) {
+  } else if (statusButtonWhite[etage] == 0 && huidigeVerdieping < etage) {
     Wire.beginTransmission(etage);
     Wire.write(huidigeVerdieping);
     Wire.write(0);
@@ -119,7 +119,7 @@ void verdiepingOmhoog (int n)
     //Er wordt gecheckt of de verdieping al is aangekomen bij verdieping 'n'
     Wire.requestFrom(n, 1);
     statusSensor[n] = Wire.read();
-    if (statusSensor[n] == 0) //Als de sensoren van verdieping 'n' stopt de motor en de while loop
+    if (statusSensor[n] == 1) //Als de sensoren van verdieping 'n' stopt de motor en de while loop
     {
       digitalWrite(in1, LOW); //dc motor============================
       digitalWrite(in2, LOW);
@@ -145,7 +145,7 @@ void verdiepingOmlaag (int n)
     //Er wordt gecheckt of de verdieping al is aangekomen bij verdieping 'n'
     Wire.requestFrom(n, 1);
     statusSensor[n] = Wire.read();
-    if (statusSensor[n] == 0) //Als de sensoren van verdieping 'n' stopt de motor en de while loop
+    if (statusSensor[n] == 1) //Als de sensoren van verdieping 'n' stopt de motor en de while loop
     {
       digitalWrite(in1, LOW); //dc motor============================
       digitalWrite(in2, LOW);
