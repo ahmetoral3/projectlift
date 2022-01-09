@@ -2,7 +2,6 @@
 #include <Wire.h>
 
 #define SLAVE_0 0
-#define MASTER 20
 
 // SLAVE CODE
 
