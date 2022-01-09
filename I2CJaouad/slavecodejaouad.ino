@@ -93,7 +93,7 @@ void setup() {
 
 void loop() {
   buttonLEDS();
-  if (statusSensor == 0){
+  if (statusSensor == 1){
     digitalWrite(redLED, HIGH);
     digitalWrite(blueLED, LOW);
   } else {
