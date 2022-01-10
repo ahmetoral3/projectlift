@@ -85,7 +85,7 @@ void setup() {
   pinMode(buttonWhiteLED, OUTPUT);
   pinMode(redLED, OUTPUT);
   pinMode(blueLED, OUTPUT);
-  Wire.begin(1);
+  Wire.begin(0);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
   Serial.begin(9600);
