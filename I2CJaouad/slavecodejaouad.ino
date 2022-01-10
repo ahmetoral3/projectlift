@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define SLAVE_0 0
+#define SLAVE_3 3 //verandere hier de corresponderende address 0, 1, 2, of 3
 
 // SLAVE CODE
 
@@ -85,7 +85,7 @@ void setup() {
   pinMode(buttonWhiteLED, OUTPUT);
   pinMode(redLED, OUTPUT);
   pinMode(blueLED, OUTPUT);
-  Wire.begin(0);
+  Wire.begin(3); //verandere hier de corresponderende address 0, 1, 2, of 3
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
   Serial.begin(9600);
