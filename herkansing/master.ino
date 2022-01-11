@@ -14,6 +14,8 @@ static uint8_t destination_floor;
 
 static int8_t current_direction;
 
+static long time = millis();
+
 Keypad keypad = Keypad(makeKeymap(KEYS), ROW_PINS, COL_PINS, ROWS, COLS);
 
 void set_current_direction(int8_t c_direction) {
@@ -25,9 +27,13 @@ void set_current_direction(int8_t c_direction) {
 }
 
 void send_i2c_data(int data) {
-  Wire.beginTransmission(0);
-  Wire.write(data);
-  Wire.endTransmission();
+  for (uint8_t index  = 20; index < 24; index++) {
+    Serial.print("Sending data: ");
+    Serial.println(data);
+    Wire.beginTransmission(index);
+    Wire.write(data);
+    Wire.endTransmission();
+  }
 }
 
 /**
@@ -70,17 +76,20 @@ void handle_client_data(uint8_t data) {
   // TODO handle data...
   //  cout << "Data received..." << endl;
   Serial.println("Data received...");
-  Serial.println(data);
+  Serial.println(data, BIN);
   for (size_t index = 0; index < 3; index++) {
     if (data & 1) {
       switch (index) {
         case 0: // Button down pressed
+          data = data >> 1;
         case 1: // Button up pressed
           for (auto destination : destinations) {
             if (data == destination)
               return;
           }
-          data = data >> 2;
+          Serial.print("Button press detected at floor ");
+          Serial.println(index);
+          data = data >> 1;
           insert_in_destination_array(destinations_left, data >> 1);
           break;
         case 2: // Arrived at floor.
@@ -88,6 +97,7 @@ void handle_client_data(uint8_t data) {
           break;
       }
     }
+    data = data >> 1;
   }
 }
 
@@ -105,6 +115,7 @@ void remove_at_index(int index) {
   }
   // Decrementeer de hoeveelheid
   destinations_left -= 1;
+  
 }
 
 void handle_ir_signal(byte data) {
@@ -128,8 +139,11 @@ void handle_ir_signal(byte data) {
     }
     time_to_go = millis() + 5000;
     remove_at_index(0);
+    destination_floor = destinations[0];
     current_direction = STATIONARY;
-    send_i2c_data((data << 1) + 1);
+    data = data << 1;
+    data += 1;
+    send_i2c_data(data);
   }
 
 
@@ -253,9 +267,9 @@ void setup_timer_interrupt(int freq) {
 
 }
 
-ISR(TIMER3_COMPA_vect) {
-  process_key(keypad.getKey());
-}
+//ISR(TIMER3_COMPA_vect) {
+//  process_key(keypad.getKey());
+//}
 
 void setup() {
   Serial.begin(9600);
@@ -266,18 +280,25 @@ void setup() {
 
   Wire.begin();
 
-  time_to_go = millis() + 5000;
+  time_to_go = millis();
 
-  current_floor = 4;
+  current_floor = 3;
   destinations_left = 0;
   insert_in_destination_array(0, 0);
 
 }
 
 void loop() {
-  for (size_t index = 20; index < 24; index++) {
-    byte data = Wire.requestFrom(index, 1, true);
+  delay(1000);
+  if (millis() - time > 50) {
+  for (uint8_t index = 20; index < 24; index++) {
+    byte data = Wire.requestFrom(index, 1);
+    while (Wire.available()) {
+      data = Wire.read();
+    }
     handle_client_data(data);
+  }
+  time = millis();
   }
   if (current_direction == STATIONARY && (millis() > time_to_go) && destinations_left > 0) {
     destination_floor = destinations[0];
