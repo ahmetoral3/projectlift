@@ -84,7 +84,8 @@ void handle_client_data(uint8_t data) {
           insert_in_destination_array(destinations_left, data >> 1);
           break;
         case 2: // Arrived at floor.
-        break;
+          handle_ir_signal(data >> 1);
+          break;
       }
     }
   }
