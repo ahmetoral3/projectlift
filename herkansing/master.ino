@@ -21,10 +21,10 @@ void set_current_direction(int8_t c_direction) {
   byte data = 0;
   data += destination_floor;
   data = data << 1;
-  send_I2C_data(data);
+  send_i2c_data(data);
 }
 
-void send_I2C_data(int data) {
+void send_i2c_data(int data) {
   Wire.beginTransmission(0);
   Wire.write(data);
   Wire.endTransmission();
@@ -66,7 +66,7 @@ void insert_in_destination_array(uint8_t index, uint8_t destination) {
 /**
    Leest data via I2C, en roept de juiste handle-functies aan.
 */
-void handle_client_data(uint8_t client_address, uint8_t data) {
+void handle_client_data(uint8_t data) {
   // TODO handle data...
   //  cout << "Data received..." << endl;
   Serial.println("Data received...");
@@ -93,7 +93,7 @@ void handle_client_data(uint8_t client_address, uint8_t data) {
 /**
    Removes the entry at the given index of the destinations-array.
 */
-void removeAtIndex(int index) {
+void remove_at_index(int index) {
   // Als de index kleiner is dan destinationsLeft, dan is het een valide index.
   if (index < destinations_left) {
     // Vanaf de index die verwijderd moet worden, schuiven we alle waardes in de destinationsArray een plaats op naar links.
@@ -106,7 +106,7 @@ void removeAtIndex(int index) {
   destinations_left -= 1;
 }
 
-void handleIRSignal(byte data) {
+void handle_ir_signal(byte data) {
   // TODO implement
   // if data == destinationFloor then
   //     Stop elevator
@@ -119,23 +119,23 @@ void handleIRSignal(byte data) {
       case 0:
         break;
       case 1:
-        forwardRampDown();
+        forward_ramp_down();
         break;
       case -1:
-        backwardRampDown();
+        backward_ramp_down();
         break;
     }
     time_to_go = millis() + 5000;
-    removeAtIndex(0);
+    remove_at_index(0);
     current_direction = STATIONARY;
-    send_I2C_data((data << 1) + 1);
+    send_i2c_data((data << 1) + 1);
   }
 
 
 
 }
 
-void handleButtonPress(byte data) {
+void handle_button_press(byte data) {
   // Als de data al in de destinationArray staat, dan doen we er niks mee.
   for (auto destination : destinations) {
     if (data == destination) return;
@@ -146,7 +146,7 @@ void handleButtonPress(byte data) {
   insert_in_destination_array(destinations_left, data);
 }
 
-void processKey(char key) {
+void process_key(char key) {
 
   byte keypad_data = current_floor;
 
@@ -174,12 +174,12 @@ void processKey(char key) {
   keypad_data = keypad_data << 1;
   keypad_data += (keypad_data > current_floor) ? 1 : 0;
 
-  handleButtonPress(keypad_data);
+  handle_button_press(keypad_data);
 
 }
 
 // Motor
-void forwardRampUp() {
+void forward_ramp_up() {
   digitalWrite(MOTOR_IN_1, HIGH);
   digitalWrite(MOTOR_IN_2, LOW);
   int i = 134;
@@ -192,7 +192,7 @@ void forwardRampUp() {
   }
 }
 
-void forwardRampDown() {
+void forward_ramp_down() {
   digitalWrite(MOTOR_IN_1, HIGH);
   digitalWrite(MOTOR_IN_2, LOW);
   int i = 255;
@@ -205,7 +205,7 @@ void forwardRampDown() {
   }
 }
 
-void backwardRampUp() {
+void backward_ramp_up() {
   digitalWrite(MOTOR_IN_1, LOW);
   digitalWrite(MOTOR_IN_2, HIGH);
   int i = 134;
@@ -218,7 +218,7 @@ void backwardRampUp() {
   }
 }
 
-void backwardRampDown() {
+void backward_ramp_down() {
   digitalWrite(MOTOR_IN_1, LOW);
   digitalWrite(MOTOR_IN_2, HIGH);
   int i = 255;
@@ -236,7 +236,7 @@ void brake() {
   digitalWrite(MOTOR_IN_2, HIGH);
 }
 
-void setupTimerInterrupt(int freq) {
+void setup_timer_interrupt(int freq) {
 
   TCCR3A = 0;
   TCCR3B = 0;
@@ -253,7 +253,7 @@ void setupTimerInterrupt(int freq) {
 }
 
 ISR(TIMER3_COMPA_vect) {
-  processKey(keypad.getKey());
+  process_key(keypad.getKey());
 }
 
 void setup() {
@@ -282,10 +282,10 @@ void loop() {
     destination_floor = destinations[0];
     if (destination_floor > current_floor) {
       set_current_direction(GOING_UP);
-      forwardRampUp();
+      forward_ramp_up();
     } else {
       set_current_direction(GOING_DOWN);
-      backwardRampUp();
+      backward_ramp_up();
     }
   }
 }
