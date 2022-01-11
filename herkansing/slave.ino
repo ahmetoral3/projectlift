@@ -11,7 +11,7 @@ static bool up_button_pressed = false;
 
 void setup() {
 
-//  Serial.begin(9600);
+  Serial.begin(9600);
 
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
@@ -29,6 +29,7 @@ void setup() {
 
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(receiveEvent);
+  Wire.onRequest(on_data_request);
 
   TWAR = (I2C_ADDRESS << 1) | 1; //  Enable receiving broadcasts from master.
 
@@ -56,7 +57,7 @@ void loop() {
   //TODO implement cooldown for IR-read.
   // Als de lift gedetecteerd wordt, door de sensor, dan sturen we die data naar de machine-kamer.
   //    cout << "Lift detected..." << endl;    
-  if (!read_ir_sensor()) {
+  if (read_ir_sensor()) {
     lift_detected_by_sensor = true;
   }
 }
@@ -143,12 +144,14 @@ void set_indicator_led(const int &cDirection) {
  * Leest de broadcasts van de machine-kamer, en roept de juiste handle-functies aan.
  */
 void receiveEvent(int sizeOfTransmission) {
-  
+  byte data = 0;
+  if (!Wire.available()) return;
   while (Wire.available()) {
       byte data = Wire.read();
-      process_transmission_data(data);
   }
-  
+  process_transmission_data(data);
+  Serial.print("Data received: ");
+  Serial.println(data);
 }
 
 /**
@@ -175,6 +178,8 @@ void on_data_request() {
   data = data << 1;
   data += (down_button_pressed) ? 1 : 0;
   Wire.write(data);
+
+  Serial.println("Data requested by master...");
   
   lift_detected_by_sensor = false;
   down_button_pressed = false;
