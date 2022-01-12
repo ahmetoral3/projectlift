@@ -59,6 +59,11 @@ void loop() {
   //    cout << "Lift detected..." << endl;    
   if (read_ir_sensor()) {
     lift_detected_by_sensor = true;
+    digitalWrite(LED_UP, LOW);
+    digitalWrite(LED_DOWN, HIGH);
+  } else {
+    digitalWrite(LED_DOWN, LOW);
+    digitalWrite(LED_UP, HIGH);
   }
 }
 
@@ -80,9 +85,11 @@ void set_current_floor(const int &new_floor) {
   current_floor = new_floor;
   change_number_display(new_floor);
   if (new_floor == THIS_FLOOR && THIS_FLOOR == destination_floor) {
-    set_indicator_led(STATIONARY);
+//    set_indicator_led(GOING_UP);
     digitalWrite(BUTTON_DOWN_LED, LOW);
     digitalWrite(BUTTON_UP_LED, LOW);
+  } else {
+//    set_indicator_led(GOING_DOWN);
   }
 }
 
@@ -144,11 +151,11 @@ void set_indicator_led(const int &cDirection) {
  * Leest de broadcasts van de machine-kamer, en roept de juiste handle-functies aan.
  */
 void receiveEvent(int sizeOfTransmission) {
-  byte data = 0;
-  if (!Wire.available()) return;
+  byte data = 255;
   while (Wire.available()) {
-      byte data = Wire.read();
+      data = Wire.read();
   }
+  if (data == 255) return;
   process_transmission_data(data);
   Serial.print("Data received: ");
   Serial.println(data);
