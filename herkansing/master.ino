@@ -13,6 +13,7 @@ static uint8_t current_floor;
 static uint8_t destination_floor;
 
 static int8_t current_direction;
+static boolean notify = true;
 
 static long time = millis();
 
@@ -93,7 +94,8 @@ void handle_client_data(uint8_t data) {
           insert_in_destination_array(destinations_left, data >> 1);
           break;
         case 2: // Arrived at floor.
-          handle_ir_signal(data >> 1);
+          notify = true;
+          current_floor = data >> 1;
           break;
       }
     }
@@ -137,17 +139,14 @@ void handle_ir_signal(byte data) {
         backward_ramp_down();
         break;
     }
-    time_to_go = millis() + 5000;
+//    time_to_go = millis() + 5000;
     remove_at_index(0);
     destination_floor = destinations[0];
     current_direction = STATIONARY;
-    data = data << 1;
-    data += 1;
-    send_i2c_data(data);
   }
-
-
-
+  data = data << 1;
+  data = data + 1;
+  send_i2c_data(data);
 }
 
 void handle_button_press(byte data) {
@@ -289,16 +288,16 @@ void setup() {
 }
 
 void loop() {
-  delay(1000);
-  if (millis() - time > 50) {
+  if (notify) {
+    handle_ir_signal(current_floor);
+    notify = false;
+  }
   for (uint8_t index = 20; index < 24; index++) {
     byte data = Wire.requestFrom(index, 1);
     while (Wire.available()) {
       data = Wire.read();
     }
     handle_client_data(data);
-  }
-  time = millis();
   }
   if (current_direction == STATIONARY && (millis() > time_to_go) && destinations_left > 0) {
     destination_floor = destinations[0];
