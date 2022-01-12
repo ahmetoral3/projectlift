@@ -1,13 +1,13 @@
 #include <Wire.h>
 #include "slave_constants.hpp" 
 
-static uint8_t current_floor = 6; // Used to determine which number to show on the 7-segment display.
-static uint8_t destination_floor = 0;
-static int8_t current_direction = STATIONARY; // Used to determine which indicator LED to turn on.
+uint8_t current_floor = 6; // Used to determine which number to show on the 7-segment display.
+uint8_t destination_floor = 0;
+int8_t current_direction = STATIONARY; // Used to determine which indicator LED to turn on.
 
-static bool lift_detected_by_sensor = false;
-static bool down_button_pressed = false;
-static bool up_button_pressed = false;
+bool lift_detected_by_sensor = false;
+bool down_button_pressed = false;
+bool up_button_pressed = false;
 
 void setup() {
 
@@ -85,11 +85,8 @@ void set_current_floor(const int &new_floor) {
   current_floor = new_floor;
   change_number_display(new_floor);
   if (new_floor == THIS_FLOOR && THIS_FLOOR == destination_floor) {
-//    set_indicator_led(GOING_UP);
     digitalWrite(BUTTON_DOWN_LED, LOW);
     digitalWrite(BUTTON_UP_LED, LOW);
-  } else {
-//    set_indicator_led(GOING_DOWN);
   }
 }
 
